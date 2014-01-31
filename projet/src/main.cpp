@@ -1,319 +1,425 @@
 /*****************************************************************************
-*                                                                            *
-*  OpenNI 1.x Alpha                                                          *
-*  Copyright (C) 2012 PrimeSense Ltd.                                        *
-*                                                                            *
-*  This file is part of OpenNI.                                              *
-*                                                                            *
-*  Licensed under the Apache License, Version 2.0 (the "License");           *
-*  you may not use this file except in compliance with the License.          *
-*  You may obtain a copy of the License at                                   *
-*                                                                            *
-*      http://www.apache.org/licenses/LICENSE-2.0                            *
-*                                                                            *
-*  Unless required by applicable law or agreed to in writing, software       *
-*  distributed under the License is distributed on an "AS IS" BASIS,         *
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
-*  See the License for the specific language governing permissions and       *
-*  limitations under the License.                                            *
-*                                                                            *
-*****************************************************************************/
+ *                                                                            *
+ *  OpenNI 1.x Alpha                                                          *
+ *  Copyright (C) 2012 PrimeSense Ltd.                                        *
+ *                                                                            *
+ *  This file is part of OpenNI.                                              *
+ *                                                                            *
+ *  Licensed under the Apache License, Version 2.0 (the "License");           *
+ *  you may not use this file except in compliance with the License.          *
+ *  You may obtain a copy of the License at                                   *
+ *                                                                            *
+ *      http://www.apache.org/licenses/LICENSE-2.0                            *
+ *                                                                            *
+ *  Unless required by applicable law or agreed to in writing, software       *
+ *  distributed under the License is distributed on an "AS IS" BASIS,         *
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+ *  See the License for the specific language governing permissions and       *
+ *  limitations under the License.                                            *
+ *                                                                            *
+ *****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
-#include <XnOS.h>
-#if (XN_PLATFORM == XN_PLATFORM_MACOSX)
-	#include <GLUT/glut.h>
-#else
-	#include <GL/glut.h>
-#endif
-#include <math.h>
-
+#include <cstring>
 #include <iostream>
+#include <ctime>
 #include <cstdio>
+#include <cstdlib>
+#include <XnOpenNI.h>
+#include <XnCodecIDs.h>
 #include <XnCppWrapper.h>
-using namespace xn;
-
-//---------------------------------------------------------------------------
-// Defines
-//---------------------------------------------------------------------------
-#define SAMPLE_XML_PATH "../data/SamplesConfig.xml"
-
-#define GL_WIN_SIZE_X 1280
-#define GL_WIN_SIZE_Y 1024
-
-#define DISPLAY_MODE_OVERLAY	1
-#define DISPLAY_MODE_DEPTH		2
-#define DISPLAY_MODE_IMAGE		3
-#define DEFAULT_DISPLAY_MODE	DISPLAY_MODE_DEPTH
-
+#include <XnPropNames.h>
+#include <GL/glut.h>
+#include "scene.h"
 //---------------------------------------------------------------------------
 // Globals
 //---------------------------------------------------------------------------
-float* g_pDepthHist;
-XnRGB24Pixel* g_pTexMap = NULL;
-unsigned int g_nTexMapX = 0;
-unsigned int g_nTexMapY = 0;
-XnDepthPixel g_nZRes;
+xn::Context g_Context;
+xn::ScriptNode g_scriptNode;
+xn::DepthGenerator g_DepthGenerator;
+xn::UserGenerator g_UserGenerator;
+xn::Player g_Player;
 
-unsigned int g_nViewState = DEFAULT_DISPLAY_MODE;
+XnBool g_bNeedPose = FALSE;
+XnChar g_strPose[20] = "";
+XnBool g_bDrawBackground = TRUE;
+XnBool g_bDrawPixels = TRUE;
+XnBool g_bDrawSkeleton = TRUE;
+XnBool g_bPrintID = TRUE;
+XnBool g_bPrintState = TRUE;
 
-Context g_context;
-ScriptNode g_scriptNode;
-DepthGenerator g_depth;
-ImageGenerator g_image;
-DepthMetaData g_depthMD;
-ImageMetaData g_imageMD;
+XnBool g_bPrintFrameID = FALSE;
+XnBool g_bMarkJoints = FALSE;
+
+#define DEBUG 1
+#define GL_WIN_SIZE_X 720
+#define GL_WIN_SIZE_Y 480
+#define XN_CALIBRATION_FILE_NAME "UserCalibration.bin"
+#define SAMPLE_XML_PATH "../data/SamplesConfig.xml"
+
+XnBool g_bPause = false;
+XnBool g_bRecord = false;
+
+XnBool g_bQuit = false;
 
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
 
-void glutIdle (void)
+void CleanupExit()
 {
-	// Display the frame
-	glutPostRedisplay();
+  g_scriptNode.Release();
+  g_DepthGenerator.Release();
+  g_UserGenerator.Release();
+  g_Player.Release();
+  g_Context.Release();
+
+  exit (1);
 }
 
+// Callback: New user was detected
+void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& /*generator*/, XnUserID nId, void* /*pCookie*/)
+{
+  XnUInt32 epochTime = 0;
+  xnOSGetEpochTime(&epochTime);
+  printf("%d New User %d\n", epochTime, nId);
+  // New user found
+  if (g_bNeedPose)
+    {
+      g_UserGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
+    }
+  else
+    {
+      g_UserGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
+    }
+}
+// Callback: An existing user was lost
+void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& /*generator*/, XnUserID nId, void* /*pCookie*/)
+{
+  XnUInt32 epochTime = 0;
+  xnOSGetEpochTime(&epochTime);
+  printf("%d Lost user %d\n", epochTime, nId);	
+}
+// Callback: Detected a pose
+void XN_CALLBACK_TYPE UserPose_PoseDetected(xn::PoseDetectionCapability& /*capability*/, const XnChar* strPose, XnUserID nId, void* /*pCookie*/)
+{
+  XnUInt32 epochTime = 0;
+  xnOSGetEpochTime(&epochTime);
+  printf("%d Pose %s detected for user %d\n", epochTime, strPose, nId);
+  g_UserGenerator.GetPoseDetectionCap().StopPoseDetection(nId);
+  g_UserGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
+}
+// Callback: Started calibration
+void XN_CALLBACK_TYPE UserCalibration_CalibrationStart(xn::SkeletonCapability& /*capability*/, XnUserID nId, void* /*pCookie*/)
+{
+  XnUInt32 epochTime = 0;
+  xnOSGetEpochTime(&epochTime);
+  printf("%d Calibration started for user %d\n", epochTime, nId);
+}
+// Callback: Finished calibration
+void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability& /*capability*/, XnUserID nId, XnCalibrationStatus eStatus, void* /*pCookie*/)
+{
+  XnUInt32 epochTime = 0;
+  xnOSGetEpochTime(&epochTime);
+  if (eStatus == XN_CALIBRATION_STATUS_OK)
+    {
+      // Calibration succeeded
+      printf("%d Calibration complete, start tracking user %d\n", epochTime, nId);		
+      g_UserGenerator.GetSkeletonCap().StartTracking(nId);
+    }
+  else
+    {
+      // Calibration failed
+      printf("%d Calibration failed for user %d\n", epochTime, nId);
+      if(eStatus==XN_CALIBRATION_STATUS_MANUAL_ABORT)
+        {
+	  printf("Manual abort occured, stop attempting to calibrate!");
+	  return;
+        }
+      if (g_bNeedPose)
+	{
+	  g_UserGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
+	}
+      else
+	{
+	  g_UserGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
+	}
+    }
+}
+
+
+
+// Save calibration to file
+void SaveCalibration()
+{
+  XnUserID aUserIDs[20] = {0};
+  XnUInt16 nUsers = 20;
+  g_UserGenerator.GetUsers(aUserIDs, nUsers);
+  for (int i = 0; i < nUsers; ++i)
+    {
+      // Find a user who is already calibrated
+      if (g_UserGenerator.GetSkeletonCap().IsCalibrated(aUserIDs[i]))
+	{
+	  // Save user's calibration to file
+	  g_UserGenerator.GetSkeletonCap().SaveCalibrationDataToFile(aUserIDs[i], XN_CALIBRATION_FILE_NAME);
+	  break;
+	}
+    }
+}
+// Load calibration from file
+void LoadCalibration()
+{
+  XnUserID aUserIDs[20] = {0};
+  XnUInt16 nUsers = 20;
+  g_UserGenerator.GetUsers(aUserIDs, nUsers);
+  for (int i = 0; i < nUsers; ++i)
+    {
+      // Find a user who isn't calibrated or currently in pose
+      if (g_UserGenerator.GetSkeletonCap().IsCalibrated(aUserIDs[i])) continue;
+      if (g_UserGenerator.GetSkeletonCap().IsCalibrating(aUserIDs[i])) continue;
+
+      // Load user's calibration from file
+      XnStatus rc = g_UserGenerator.GetSkeletonCap().LoadCalibrationDataFromFile(aUserIDs[i], XN_CALIBRATION_FILE_NAME);
+      if (rc == XN_STATUS_OK)
+	{
+	  // Make sure state is coherent
+	  g_UserGenerator.GetPoseDetectionCap().StopPoseDetection(aUserIDs[i]);
+	  g_UserGenerator.GetSkeletonCap().StartTracking(aUserIDs[i]);
+	}
+      break;
+    }
+}
+
+// this function is called each frame
 void glutDisplay (void)
 {
-	XnStatus rc = XN_STATUS_OK;
 
-	// Read a new frame
-	rc = g_context.WaitAnyUpdateAll();
-	if (rc != XN_STATUS_OK)
-	{
-		printf("Read failed: %s\n", xnGetStatusString(rc));
-		return;
-	}
+  glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	g_depth.GetMetaData(g_depthMD);
-	g_image.GetMetaData(g_imageMD);
+  // Setup the OpenGL viewpoint
+  glMatrixMode(GL_PROJECTION);
+  glPushMatrix();
+  glLoadIdentity();
+#if DEBUG!=1
+  xn::SceneMetaData sceneMD;
+  xn::DepthMetaData depthMD;
 
-	const XnDepthPixel* pDepth = g_depthMD.Data();
+  g_DepthGenerator.GetMetaData(depthMD);
 
-	// Copied from SimpleViewer
-	// Clear the OpenGL buffers
-	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glOrtho(0, depthMD.XRes(), depthMD.YRes(), 0, -1.0, 1.0);
 
-	// Setup the OpenGL viewpoint
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0, GL_WIN_SIZE_X, GL_WIN_SIZE_Y, 0, -1.0, 1.0);
+  if (!g_bPause)
+    {
+      // Read next available data
+      g_Context.WaitOneUpdateAll(g_UserGenerator);
+    }
 
-	// Calculate the accumulative histogram (the yellow display...)
-	xnOSMemSet(g_pDepthHist, 0, g_nZRes*sizeof(float));
+  // Process the data
+  g_DepthGenerator.GetMetaData(depthMD);
+  g_UserGenerator.GetUserPixels(0, sceneMD);
+  DrawDepthMap(depthMD, sceneMD);
 
-	unsigned int nNumberOfPoints = 0;
-	for (XnUInt y = 0; y < g_depthMD.YRes(); ++y)
-	{
-		for (XnUInt x = 0; x < g_depthMD.XRes(); ++x, ++pDepth)
-		{
-			if (*pDepth != 0)
-			{
-				g_pDepthHist[*pDepth]++;
-				nNumberOfPoints++;
-			}
-		}
-	}
-	for (int nIndex=1; nIndex<g_nZRes; nIndex++)
-	{
-		g_pDepthHist[nIndex] += g_pDepthHist[nIndex-1];
-	}
-	if (nNumberOfPoints)
-	{
-		for (int nIndex=1; nIndex<g_nZRes; nIndex++)
-		{
-			g_pDepthHist[nIndex] = (unsigned int)(256 * (1.0f - (g_pDepthHist[nIndex] / nNumberOfPoints)));
-		}
-	}
+#else
+  glOrtho(0, GL_WIN_SIZE_X , GL_WIN_SIZE_Y, 0, -1.0, 1.0);
+#endif
+  glDisable(GL_TEXTURE_2D);
+  glutSwapBuffers();
+}
 
-	xnOSMemSet(g_pTexMap, 0, g_nTexMapX*g_nTexMapY*sizeof(XnRGB24Pixel));
 
-	// check if we need to draw image frame to texture
-	if (g_nViewState == DISPLAY_MODE_OVERLAY ||
-		g_nViewState == DISPLAY_MODE_IMAGE)
-	{
-		const XnRGB24Pixel* pImageRow = g_imageMD.RGB24Data();
-		XnRGB24Pixel* pTexRow = g_pTexMap + g_imageMD.YOffset() * g_nTexMapX;
+void glutIdle (void)
+{
+  if (g_bQuit) {
+    CleanupExit();
+  }
 
-		for (XnUInt y = 0; y < g_imageMD.YRes(); ++y)
-		{
-			const XnRGB24Pixel* pImage = pImageRow;
-			XnRGB24Pixel* pTex = pTexRow + g_imageMD.XOffset();
-
-			for (XnUInt x = 0; x < g_imageMD.XRes(); ++x, ++pImage, ++pTex)
-			{
-				*pTex = *pImage;
-			}
-
-			pImageRow += g_imageMD.XRes();
-			pTexRow += g_nTexMapX;
-		}
-	}
-
-	// check if we need to draw depth frame to texture
-	if (g_nViewState == DISPLAY_MODE_OVERLAY ||
-		g_nViewState == DISPLAY_MODE_DEPTH)
-	{
-		const XnDepthPixel* pDepthRow = g_depthMD.Data();
-		XnRGB24Pixel* pTexRow = g_pTexMap + g_depthMD.YOffset() * g_nTexMapX;
-
-		for (XnUInt y = 0; y < g_depthMD.YRes(); ++y)
-		{
-			const XnDepthPixel* pDepth = pDepthRow;
-			XnRGB24Pixel* pTex = pTexRow + g_depthMD.XOffset();
-
-			for (XnUInt x = 0; x < g_depthMD.XRes(); ++x, ++pDepth, ++pTex)
-			{
-				if (*pDepth != 0)
-				{
-					int nHistValue = g_pDepthHist[*pDepth];
-					pTex->nRed = nHistValue;
-					pTex->nGreen = nHistValue;
-					pTex->nBlue = 0;
-				}
-			}
-
-			pDepthRow += g_depthMD.XRes();
-			pTexRow += g_nTexMapX;
-		}
-	}
-
-	// Create the OpenGL texture map
-	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP_SGIS, GL_TRUE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_nTexMapX, g_nTexMapY, 0, GL_RGB, GL_UNSIGNED_BYTE, g_pTexMap);
-
-	// Display the OpenGL texture map
-	glColor4f(1,1,1,1);
-
-	glBegin(GL_QUADS);
-
-	int nXRes = g_depthMD.FullXRes();
-	int nYRes = g_depthMD.FullYRes();
-
-	// upper left
-	glTexCoord2f(0, 0);
-	glVertex2f(0, 0);
-	// upper right
-	glTexCoord2f((float)nXRes/(float)g_nTexMapX, 0);
-	glVertex2f(GL_WIN_SIZE_X, 0);
-	// bottom right
-	glTexCoord2f((float)nXRes/(float)g_nTexMapX, (float)nYRes/(float)g_nTexMapY);
-	glVertex2f(GL_WIN_SIZE_X, GL_WIN_SIZE_Y);
-	// bottom left
-	glTexCoord2f(0, (float)nYRes/(float)g_nTexMapY);
-	glVertex2f(0, GL_WIN_SIZE_Y);
-
-	glEnd();
-
-	// Swap the OpenGL display buffers
-	glutSwapBuffers();
+  // Display the frame
+  glutPostRedisplay();
 }
 
 void glutKeyboard (unsigned char key, int /*x*/, int /*y*/)
 {
-	switch (key)
-	{
-		case 27:
-			exit (1);
-		case '1':
-			g_nViewState = DISPLAY_MODE_OVERLAY;
-			g_depth.GetAlternativeViewPointCap().SetViewPoint(g_image);
-			break;
-		case '2':
-			g_nViewState = DISPLAY_MODE_DEPTH;
-			g_depth.GetAlternativeViewPointCap().ResetViewPoint();
-			break;
-		case '3':
-			g_nViewState = DISPLAY_MODE_IMAGE;
-			g_depth.GetAlternativeViewPointCap().ResetViewPoint();
-			break;
-		case 'm':
-			g_context.SetGlobalMirror(!g_context.GetGlobalMirror());
-			break;
-	}
+  switch (key)
+    {
+    case 27:
+      CleanupExit();
+    case 'b':
+      // Draw background?
+      g_bDrawBackground = !g_bDrawBackground;
+      break;
+    case 'x':
+      // Draw pixels at all?
+      g_bDrawPixels = !g_bDrawPixels;
+      break;
+    case 's':
+      // Draw Skeleton?
+      g_bDrawSkeleton = !g_bDrawSkeleton;
+      break;
+    case 'i':
+      // Print label?
+      g_bPrintID = !g_bPrintID;
+      break;
+    case 'l':
+      // Print ID & state as label, or only ID?
+      g_bPrintState = !g_bPrintState;
+      break;
+    case 'f':
+      // Print FrameID
+      g_bPrintFrameID = !g_bPrintFrameID;
+      break;
+    case 'j':
+      // Mark joints
+      g_bMarkJoints = !g_bMarkJoints;
+      break;
+    case'p':
+      g_bPause = !g_bPause;
+      break;
+    case 'S':
+      SaveCalibration();
+      break;
+    case 'L':
+      LoadCalibration();
+      break;
+    }
+}
+void glInit (int * pargc, char ** argv)
+{
+  glutInit(pargc, argv);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH);
+
+  glutInitWindowPosition(100, 100);  
+
+  glutInitWindowSize(GL_WIN_SIZE_X, GL_WIN_SIZE_Y);
+  glutCreateWindow ("User Tracker Viewer");
+  //glutFullScreen();
+  glutSetCursor(GLUT_CURSOR_NONE);
+
+  glutKeyboardFunc(glutKeyboard);
+  glutDisplayFunc(glutDisplay);
+  glutIdleFunc(glutIdle);
+
+  glClearColor (0.0f, 0.0f, 0.0f, 1.0);
+  glClearDepth(1.0);
+  glDepthFunc(GL_LEQUAL);
+  glEnable(GL_DEPTH_TEST);	
+  glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+  glShadeModel(GL_SMOOTH);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();				// Reset The Projection Matrix
+  
+  gluPerspective(45.0f,(GLfloat)GL_WIN_SIZE_X/(GLfloat)GL_WIN_SIZE_Y,0.1f,100.0f);
+    
+  // glEnableClientState(GL_VERTEX_ARRAY);
+  // glDisableClientState(GL_COLOR_ARRAY);
 }
 
-int main(int argc, char* argv[])
+
+
+
+#define CHECK_RC(nRetVal, what)						\
+  if (nRetVal != XN_STATUS_OK)						\
+    {									\
+      printf("%s failed: %s\n", what, xnGetStatusString(nRetVal));	\
+      return nRetVal;							\
+    }
+
+
+
+int main(int argc, char **argv)
 {
-	XnStatus rc;
+  #if DEBUG == 0
+  XnStatus nRetVal = XN_STATUS_OK;
 
-	EnumerationErrors errors;
-	std::cout<<"a"<<std::endl;
-	rc = g_context.InitFromXmlFile(SAMPLE_XML_PATH, g_scriptNode, &errors);
-	if (rc == XN_STATUS_NO_NODE_PRESENT)
-	{
-		XnChar strError[1024];
-		errors.ToString(strError, 1024);
-		printf("%s\n", strError);
-		return (rc);
-	}
-	else if (rc != XN_STATUS_OK)
-	{
-		printf("Open failed: %s\n", xnGetStatusString(rc));
-		return (rc);
-	}
+  xn::EnumerationErrors errors;
+  nRetVal = g_Context.InitFromXmlFile(SAMPLE_XML_PATH, g_scriptNode, &errors);
+  if (nRetVal == XN_STATUS_NO_NODE_PRESENT){
+    XnChar strError[1024];
+    errors.ToString(strError, 1024);
+    printf("%s\n", strError);
+    return (nRetVal);
+  }else if (nRetVal != XN_STATUS_OK){
+    printf("Open failed: %s\n", xnGetStatusString(nRetVal));
+    return (nRetVal);
+  }
+    
 
-	rc = g_context.FindExistingNode(XN_NODE_TYPE_DEPTH, g_depth);
-	if (rc != XN_STATUS_OK)
-	{
-		printf("No depth node exists! Check your XML.");
-		return 1;
-	}
+  nRetVal = g_Context.FindExistingNode(XN_NODE_TYPE_DEPTH, g_DepthGenerator);
+  if (nRetVal != XN_STATUS_OK){
 
-	rc = g_context.FindExistingNode(XN_NODE_TYPE_IMAGE, g_image);
-	if (rc != XN_STATUS_OK)
-	{
-		printf("No image node exists! Check your XML.");
-		return 1;
-	}
+    printf("No depth generator found. Using a default one...");
+    xn::MockDepthGenerator mockDepth;
 
-	g_depth.GetMetaData(g_depthMD);
-	g_image.GetMetaData(g_imageMD);
+    nRetVal = mockDepth.Create(g_Context);
+        CHECK_RC(nRetVal, "Create mock depth");
 
-	// Hybrid mode isn't supported in this sample
-	if (g_imageMD.FullXRes() != g_depthMD.FullXRes() || g_imageMD.FullYRes() != g_depthMD.FullYRes())
-	{
-		printf ("The device depth and image resolution must be equal!\n");
-		return 1;
-	}
+	
+    // set some defaults
+    XnMapOutputMode defaultMode;
+    defaultMode.nXRes = 320;
+    defaultMode.nYRes = 240;
+    defaultMode.nFPS = 30;
+    nRetVal = mockDepth.SetMapOutputMode(defaultMode);
+    CHECK_RC(nRetVal, "set default mode");
 
-	// RGB is the only image format supported.
-	if (g_imageMD.PixelFormat() != XN_PIXEL_FORMAT_RGB24)
-	{
-		printf("The device image format must be RGB24\n");
-		return 1;
-	}
+    // set FOV
+    XnFieldOfView fov;
+    fov.fHFOV = 1.0225999419141749;
+    fov.fVFOV = 0.79661567681716894;
+    nRetVal = mockDepth.SetGeneralProperty(XN_PROP_FIELD_OF_VIEW, sizeof(fov), &fov);
+    CHECK_RC(nRetVal, "set FOV");
 
-	// Texture map init
-	g_nTexMapX = (((unsigned short)(g_depthMD.FullXRes()-1) / 512) + 1) * 512;
-	g_nTexMapY = (((unsigned short)(g_depthMD.FullYRes()-1) / 512) + 1) * 512;
-	g_pTexMap = (XnRGB24Pixel*)malloc(g_nTexMapX * g_nTexMapY * sizeof(XnRGB24Pixel));
+    XnUInt32 nDataSize = defaultMode.nXRes * defaultMode.nYRes * sizeof(XnDepthPixel);
+    XnDepthPixel* pData = (XnDepthPixel*)xnOSCallocAligned(nDataSize, 1, XN_DEFAULT_MEM_ALIGN);
 
-	g_nZRes = g_depthMD.ZRes();
-	g_pDepthHist = (float*)malloc(g_nZRes * sizeof(float));
+    nRetVal = mockDepth.SetData(1, 0, nDataSize, pData);
+    CHECK_RC(nRetVal, "set empty depth map");
 
-	// OpenGL init
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowSize(GL_WIN_SIZE_X, GL_WIN_SIZE_Y);
-	glutCreateWindow ("OpenNI Simple Viewer");
-	glutFullScreen();
-	glutSetCursor(GLUT_CURSOR_NONE);
+    g_DepthGenerator = mockDepth;
+  }
 
-	glutKeyboardFunc(glutKeyboard);
-	glutDisplayFunc(glutDisplay);
-	glutIdleFunc(glutIdle);
+  nRetVal = g_Context.FindExistingNode(XN_NODE_TYPE_USER, g_UserGenerator);
+  if (nRetVal != XN_STATUS_OK){
+    nRetVal = g_UserGenerator.Create(g_Context);
+    CHECK_RC(nRetVal, "Find user generator");
+  }
 
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_TEXTURE_2D);
+  XnCallbackHandle hUserCallbacks, hCalibrationStart, hCalibrationComplete, hPoseDetected, hCalibrationInProgress, hPoseInProgress;
+  if (!g_UserGenerator.IsCapabilitySupported(XN_CAPABILITY_SKELETON)){
+    printf("Supplied user generator doesn't support skeleton\n");
+    return 1;
+  }
+  nRetVal = g_UserGenerator.RegisterUserCallbacks(User_NewUser, User_LostUser, NULL, hUserCallbacks);
+  CHECK_RC(nRetVal, "Register to user callbacks");
+  nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationStart(UserCalibration_CalibrationStart, NULL, hCalibrationStart);
+  CHECK_RC(nRetVal, "Register to calibration start");
+  nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationComplete(UserCalibration_CalibrationComplete, NULL, hCalibrationComplete);
+  CHECK_RC(nRetVal, "Register to calibration complete");
 
-	// Per frame code is in glutDisplay
-	glutMainLoop();
+  if (g_UserGenerator.GetSkeletonCap().NeedPoseForCalibration()){
+    g_bNeedPose = TRUE;
+    if (!g_UserGenerator.IsCapabilitySupported(XN_CAPABILITY_POSE_DETECTION)){
+      printf("Pose required, but not supported\n");
+      return 1;
+    }
+    nRetVal = g_UserGenerator.GetPoseDetectionCap().RegisterToPoseDetected(UserPose_PoseDetected, NULL, hPoseDetected);
+    CHECK_RC(nRetVal, "Register to Pose Detected");
+    g_UserGenerator.GetSkeletonCap().GetCalibrationPose(g_strPose);
 
-	return 0;
+    nRetVal = g_UserGenerator.GetPoseDetectionCap().RegisterToPoseInProgress(MyPoseInProgress, NULL, hPoseInProgress);
+    CHECK_RC(nRetVal, "Register to pose in progress");
+  }
+
+  g_UserGenerator.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
+
+  nRetVal = g_UserGenerator.GetSkeletonCap().RegisterToCalibrationInProgress(MyCalibrationInProgress, NULL, hCalibrationInProgress);
+  CHECK_RC(nRetVal, "Register to calibration in progress");
+
+  nRetVal = g_Context.StartGeneratingAll();
+  CHECK_RC(nRetVal, "StartGenerating");
+
+#endif
+  glInit(&argc, argv);
+  glutMainLoop();
 }

@@ -1,4 +1,5 @@
 FILE(REMOVE_RECURSE
+  "CMakeFiles/CharA.dir/src/scene.o"
   "CMakeFiles/CharA.dir/src/main.o"
   "CharA_d.pdb"
   "CharA_d"

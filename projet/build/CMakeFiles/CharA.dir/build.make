@@ -35,10 +35,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/moi/M2/projet
+CMAKE_SOURCE_DIR = /home/moi/M2/mocap/projet
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/moi/M2/projet/build
+CMAKE_BINARY_DIR = /home/moi/M2/mocap/projet/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/CharA.dir/depend.make
@@ -49,19 +49,42 @@ include CMakeFiles/CharA.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/CharA.dir/flags.make
 
+CMakeFiles/CharA.dir/src/scene.o: CMakeFiles/CharA.dir/flags.make
+CMakeFiles/CharA.dir/src/scene.o: ../src/scene.cpp
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/moi/M2/mocap/projet/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/CharA.dir/src/scene.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/CharA.dir/src/scene.o -c /home/moi/M2/mocap/projet/src/scene.cpp
+
+CMakeFiles/CharA.dir/src/scene.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/CharA.dir/src/scene.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/moi/M2/mocap/projet/src/scene.cpp > CMakeFiles/CharA.dir/src/scene.i
+
+CMakeFiles/CharA.dir/src/scene.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/CharA.dir/src/scene.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/moi/M2/mocap/projet/src/scene.cpp -o CMakeFiles/CharA.dir/src/scene.s
+
+CMakeFiles/CharA.dir/src/scene.o.requires:
+.PHONY : CMakeFiles/CharA.dir/src/scene.o.requires
+
+CMakeFiles/CharA.dir/src/scene.o.provides: CMakeFiles/CharA.dir/src/scene.o.requires
+	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/scene.o.provides.build
+.PHONY : CMakeFiles/CharA.dir/src/scene.o.provides
+
+CMakeFiles/CharA.dir/src/scene.o.provides.build: CMakeFiles/CharA.dir/src/scene.o
+
 CMakeFiles/CharA.dir/src/main.o: CMakeFiles/CharA.dir/flags.make
 CMakeFiles/CharA.dir/src/main.o: ../src/main.cpp
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/moi/M2/projet/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/moi/M2/mocap/projet/build/CMakeFiles $(CMAKE_PROGRESS_2)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/CharA.dir/src/main.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/CharA.dir/src/main.o -c /home/moi/M2/projet/src/main.cpp
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/CharA.dir/src/main.o -c /home/moi/M2/mocap/projet/src/main.cpp
 
 CMakeFiles/CharA.dir/src/main.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/CharA.dir/src/main.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/moi/M2/projet/src/main.cpp > CMakeFiles/CharA.dir/src/main.i
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/moi/M2/mocap/projet/src/main.cpp > CMakeFiles/CharA.dir/src/main.i
 
 CMakeFiles/CharA.dir/src/main.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/CharA.dir/src/main.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/moi/M2/projet/src/main.cpp -o CMakeFiles/CharA.dir/src/main.s
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/moi/M2/mocap/projet/src/main.cpp -o CMakeFiles/CharA.dir/src/main.s
 
 CMakeFiles/CharA.dir/src/main.o.requires:
 .PHONY : CMakeFiles/CharA.dir/src/main.o.requires
@@ -74,11 +97,13 @@ CMakeFiles/CharA.dir/src/main.o.provides.build: CMakeFiles/CharA.dir/src/main.o
 
 # Object files for target CharA
 CharA_OBJECTS = \
+"CMakeFiles/CharA.dir/src/scene.o" \
 "CMakeFiles/CharA.dir/src/main.o"
 
 # External object files for target CharA
 CharA_EXTERNAL_OBJECTS =
 
+CharA_d: CMakeFiles/CharA.dir/src/scene.o
 CharA_d: CMakeFiles/CharA.dir/src/main.o
 CharA_d: CMakeFiles/CharA.dir/build.make
 CharA_d: /usr/lib/libOpenNI.so
@@ -99,6 +124,7 @@ CharA_d: CMakeFiles/CharA.dir/link.txt
 CMakeFiles/CharA.dir/build: CharA_d
 .PHONY : CMakeFiles/CharA.dir/build
 
+CMakeFiles/CharA.dir/requires: CMakeFiles/CharA.dir/src/scene.o.requires
 CMakeFiles/CharA.dir/requires: CMakeFiles/CharA.dir/src/main.o.requires
 .PHONY : CMakeFiles/CharA.dir/requires
 
@@ -107,6 +133,6 @@ CMakeFiles/CharA.dir/clean:
 .PHONY : CMakeFiles/CharA.dir/clean
 
 CMakeFiles/CharA.dir/depend:
-	cd /home/moi/M2/projet/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/moi/M2/projet /home/moi/M2/projet /home/moi/M2/projet/build /home/moi/M2/projet/build /home/moi/M2/projet/build/CMakeFiles/CharA.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/moi/M2/mocap/projet/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/moi/M2/mocap/projet /home/moi/M2/mocap/projet /home/moi/M2/mocap/projet/build /home/moi/M2/mocap/projet/build /home/moi/M2/mocap/projet/build/CMakeFiles/CharA.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/CharA.dir/depend
 

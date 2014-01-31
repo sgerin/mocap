@@ -21,7 +21,7 @@ endif(COMMAND cmake_policy)
 ###### Dependencies
 SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/")
 
-FIND_PATH(OPEN_NI_INCLUDE "XnOpenNI.h" "OpenNIConfig.h" HINTS "$ENV{OPEN_NI_INCLUDE}" "/usr/include/ni" "/usr/include/openni")
+FIND_PATH(OPEN_NI_INCLUDE "XnOpenNI.h" "OpenNIConfig.h" "XnCodecIDs.h" "XnCppWrapper.h" "XnPropNames.h" HINTS "$ENV{OPEN_NI_INCLUDE}" "/usr/include/ni" "/usr/include/openni")
 FIND_LIBRARY(OPEN_NI_LIBRARY NAMES OpenNI libOpenNI HINTS $ENV{OPEN_NI_LIB} "/usr/lib")
 LINK_DIRECTORIES($ENV{OPEN_NI_LIB})
 INCLUDE_DIRECTORIES(${OPEN_NI_INCLUDE})
@@ -49,6 +49,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
 
 
 SET( CHARA_FILES
+  ./src/scene.cpp
 			./src/main.cpp
 )
 

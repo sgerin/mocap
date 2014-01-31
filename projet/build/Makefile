@@ -39,10 +39,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/moi/M2/projet
+CMAKE_SOURCE_DIR = /home/moi/M2/mocap/projet
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/moi/M2/projet/build
+CMAKE_BINARY_DIR = /home/moi/M2/mocap/projet/build
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -69,9 +69,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/moi/M2/projet/build/CMakeFiles /home/moi/M2/projet/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/moi/M2/mocap/projet/build/CMakeFiles /home/moi/M2/mocap/projet/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/moi/M2/projet/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/moi/M2/mocap/projet/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -126,6 +126,21 @@ src/main.s:
 	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/main.s
 .PHONY : src/main.s
 
+# target to build an object file
+src/scene.o:
+	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/scene.o
+.PHONY : src/scene.o
+
+# target to preprocess a source file
+src/scene.i:
+	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/scene.i
+.PHONY : src/scene.i
+
+# target to generate assembly for a file
+src/scene.s:
+	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/scene.s
+.PHONY : src/scene.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -138,6 +153,9 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/scene.o"
+	@echo "... src/scene.i"
+	@echo "... src/scene.s"
 .PHONY : help
 
 

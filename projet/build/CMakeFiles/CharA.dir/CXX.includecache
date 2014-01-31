@@ -6,19 +6,47 @@
 
 #IncludeRegexTransform: 
 
-/home/moi/M2/projet/src/main.cpp
-XnOS.h
--
-GLUT/glut.h
--
-GL/glut.h
--
-math.h
+/home/moi/M2/mocap/projet/src/main.cpp
+cstring
 -
 iostream
 -
+ctime
+-
 cstdio
 -
+cstdlib
+-
+XnOpenNI.h
+-
+XnCodecIDs.h
+-
+XnCppWrapper.h
+-
+XnPropNames.h
+-
+GL/glut.h
+-
+scene.h
+/home/moi/M2/mocap/projet/src/scene.h
+
+/home/moi/M2/mocap/projet/src/scene.cpp
+cmath
+-
+XnOpenNI.h
+-
+XnCodecIDs.h
+-
+XnCppWrapper.h
+-
+XnPropNames.h
+-
+GL/glut.h
+-
+map
+-
+
+/home/moi/M2/mocap/projet/src/scene.h
 XnCppWrapper.h
 -
 
@@ -173,6 +201,8 @@ XnTypes.h
 /usr/include/ni/XnPrdNodeInfoList.h
 XnTypes.h
 -
+
+/usr/include/ni/XnPropNames.h
 
 /usr/include/ni/XnQueries.h
 XnTypes.h
