@@ -99,47 +99,62 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named CharA
+# Target rules for targets named Mocap
 
 # Build rule for target.
-CharA: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 CharA
-.PHONY : CharA
+Mocap: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 Mocap
+.PHONY : Mocap
 
 # fast build rule for target.
-CharA/fast:
-	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/build
-.PHONY : CharA/fast
+Mocap/fast:
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/build
+.PHONY : Mocap/fast
 
 # target to build an object file
 src/main.o:
-	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/main.o
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/main.o
 .PHONY : src/main.o
 
 # target to preprocess a source file
 src/main.i:
-	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/main.i
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/main.i
 .PHONY : src/main.i
 
 # target to generate assembly for a file
 src/main.s:
-	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/main.s
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/main.s
 .PHONY : src/main.s
 
 # target to build an object file
 src/scene.o:
-	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/scene.o
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/scene.o
 .PHONY : src/scene.o
 
 # target to preprocess a source file
 src/scene.i:
-	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/scene.i
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/scene.i
 .PHONY : src/scene.i
 
 # target to generate assembly for a file
 src/scene.s:
-	$(MAKE) -f CMakeFiles/CharA.dir/build.make CMakeFiles/CharA.dir/src/scene.s
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/scene.s
 .PHONY : src/scene.s
+
+# target to build an object file
+src/skel.o:
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/skel.o
+.PHONY : src/skel.o
+
+# target to preprocess a source file
+src/skel.i:
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/skel.i
+.PHONY : src/skel.i
+
+# target to generate assembly for a file
+src/skel.s:
+	$(MAKE) -f CMakeFiles/Mocap.dir/build.make CMakeFiles/Mocap.dir/src/skel.s
+.PHONY : src/skel.s
 
 # Help Target
 help:
@@ -147,7 +162,7 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... CharA"
+	@echo "... Mocap"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... src/main.o"
@@ -156,6 +171,9 @@ help:
 	@echo "... src/scene.o"
 	@echo "... src/scene.i"
 	@echo "... src/scene.s"
+	@echo "... src/skel.o"
+	@echo "... src/skel.i"
+	@echo "... src/skel.s"
 .PHONY : help
 
 

@@ -1,0 +1,1 @@
+/usr/bin/c++   -g    CMakeFiles/Mocap.dir/src/scene.o CMakeFiles/Mocap.dir/src/skel.o CMakeFiles/Mocap.dir/src/main.o  -o Mocap_d -rdynamic -lOpenNI -lGLU -lGL -lSM -lICE -lX11 -lXext -lglut -lXmu -lXi 

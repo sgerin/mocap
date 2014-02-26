@@ -21,7 +21,47 @@
 #ifndef XNV_POINT_DRAWER_H_
 #define XNV_POINT_DRAWER_H_
 
+#include <cstring>
+#include <iostream>
+#include <ctime>
+#include <cstdio>
+#include <cstdlib>
+#include <XnOpenNI.h>
+#include <XnCodecIDs.h>
 #include <XnCppWrapper.h>
+#include <XnPropNames.h>
+#include <GL/glut.h>
+#include <cmath>
+#include <map>
+#include "skel.h"
+
+#define XN_CALIBRATION_FILE_NAME "UserCalibration.bin"
+#define SAMPLE_XML_PATH "../data/SamplesConfig.xml"
+
+
+void CleanupExit();
+
+// Callback: New user was detected
+void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& /*generator*/, XnUserID nId, void* /*pCookie*/);
+
+// Callback: An existing user was lost
+void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& /*generator*/, XnUserID nId, void* /*pCookie*/);
+
+// Callback: Detected a pose
+void XN_CALLBACK_TYPE UserPose_PoseDetected(xn::PoseDetectionCapability& /*capability*/, const XnChar* strPose, XnUserID nId, void* /*pCookie*/);
+
+// Callback: Started calibration
+void XN_CALLBACK_TYPE UserCalibration_CalibrationStart(xn::SkeletonCapability& /*capability*/, XnUserID nId, void* /*pCookie*/);
+
+// Callback: Finished calibration
+void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability& /*capability*/, XnUserID nId, XnCalibrationStatus eStatus, void* /*pCookie*/);
+
+
+// Save calibration to file
+void SaveCalibration();
+
+// Load calibration from file
+void LoadCalibration();
 
 void DrawDepthMap(const xn::DepthMetaData& dmd, const xn::SceneMetaData& smd);
 

@@ -35,6 +35,7 @@
 //---------------------------------------------------------------------------
 // Globals
 //---------------------------------------------------------------------------
+
 xn::Context g_Context;
 xn::ScriptNode g_scriptNode;
 xn::DepthGenerator g_DepthGenerator;
@@ -52,11 +53,9 @@ XnBool g_bPrintState = TRUE;
 XnBool g_bPrintFrameID = FALSE;
 XnBool g_bMarkJoints = FALSE;
 
-#define DEBUG 1
+#define DEBUG 0
 #define GL_WIN_SIZE_X 720
 #define GL_WIN_SIZE_Y 480
-#define XN_CALIBRATION_FILE_NAME "UserCalibration.bin"
-#define SAMPLE_XML_PATH "../data/SamplesConfig.xml"
 
 XnBool g_bPause = false;
 XnBool g_bRecord = false;
@@ -67,129 +66,6 @@ XnBool g_bQuit = false;
 // Code
 //---------------------------------------------------------------------------
 
-void CleanupExit()
-{
-  g_scriptNode.Release();
-  g_DepthGenerator.Release();
-  g_UserGenerator.Release();
-  g_Player.Release();
-  g_Context.Release();
-
-  exit (1);
-}
-
-// Callback: New user was detected
-void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& /*generator*/, XnUserID nId, void* /*pCookie*/)
-{
-  XnUInt32 epochTime = 0;
-  xnOSGetEpochTime(&epochTime);
-  printf("%d New User %d\n", epochTime, nId);
-  // New user found
-  if (g_bNeedPose)
-    {
-      g_UserGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
-    }
-  else
-    {
-      g_UserGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
-    }
-}
-// Callback: An existing user was lost
-void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& /*generator*/, XnUserID nId, void* /*pCookie*/)
-{
-  XnUInt32 epochTime = 0;
-  xnOSGetEpochTime(&epochTime);
-  printf("%d Lost user %d\n", epochTime, nId);	
-}
-// Callback: Detected a pose
-void XN_CALLBACK_TYPE UserPose_PoseDetected(xn::PoseDetectionCapability& /*capability*/, const XnChar* strPose, XnUserID nId, void* /*pCookie*/)
-{
-  XnUInt32 epochTime = 0;
-  xnOSGetEpochTime(&epochTime);
-  printf("%d Pose %s detected for user %d\n", epochTime, strPose, nId);
-  g_UserGenerator.GetPoseDetectionCap().StopPoseDetection(nId);
-  g_UserGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
-}
-// Callback: Started calibration
-void XN_CALLBACK_TYPE UserCalibration_CalibrationStart(xn::SkeletonCapability& /*capability*/, XnUserID nId, void* /*pCookie*/)
-{
-  XnUInt32 epochTime = 0;
-  xnOSGetEpochTime(&epochTime);
-  printf("%d Calibration started for user %d\n", epochTime, nId);
-}
-// Callback: Finished calibration
-void XN_CALLBACK_TYPE UserCalibration_CalibrationComplete(xn::SkeletonCapability& /*capability*/, XnUserID nId, XnCalibrationStatus eStatus, void* /*pCookie*/)
-{
-  XnUInt32 epochTime = 0;
-  xnOSGetEpochTime(&epochTime);
-  if (eStatus == XN_CALIBRATION_STATUS_OK)
-    {
-      // Calibration succeeded
-      printf("%d Calibration complete, start tracking user %d\n", epochTime, nId);		
-      g_UserGenerator.GetSkeletonCap().StartTracking(nId);
-    }
-  else
-    {
-      // Calibration failed
-      printf("%d Calibration failed for user %d\n", epochTime, nId);
-      if(eStatus==XN_CALIBRATION_STATUS_MANUAL_ABORT)
-        {
-	  printf("Manual abort occured, stop attempting to calibrate!");
-	  return;
-        }
-      if (g_bNeedPose)
-	{
-	  g_UserGenerator.GetPoseDetectionCap().StartPoseDetection(g_strPose, nId);
-	}
-      else
-	{
-	  g_UserGenerator.GetSkeletonCap().RequestCalibration(nId, TRUE);
-	}
-    }
-}
-
-
-
-// Save calibration to file
-void SaveCalibration()
-{
-  XnUserID aUserIDs[20] = {0};
-  XnUInt16 nUsers = 20;
-  g_UserGenerator.GetUsers(aUserIDs, nUsers);
-  for (int i = 0; i < nUsers; ++i)
-    {
-      // Find a user who is already calibrated
-      if (g_UserGenerator.GetSkeletonCap().IsCalibrated(aUserIDs[i]))
-	{
-	  // Save user's calibration to file
-	  g_UserGenerator.GetSkeletonCap().SaveCalibrationDataToFile(aUserIDs[i], XN_CALIBRATION_FILE_NAME);
-	  break;
-	}
-    }
-}
-// Load calibration from file
-void LoadCalibration()
-{
-  XnUserID aUserIDs[20] = {0};
-  XnUInt16 nUsers = 20;
-  g_UserGenerator.GetUsers(aUserIDs, nUsers);
-  for (int i = 0; i < nUsers; ++i)
-    {
-      // Find a user who isn't calibrated or currently in pose
-      if (g_UserGenerator.GetSkeletonCap().IsCalibrated(aUserIDs[i])) continue;
-      if (g_UserGenerator.GetSkeletonCap().IsCalibrating(aUserIDs[i])) continue;
-
-      // Load user's calibration from file
-      XnStatus rc = g_UserGenerator.GetSkeletonCap().LoadCalibrationDataFromFile(aUserIDs[i], XN_CALIBRATION_FILE_NAME);
-      if (rc == XN_STATUS_OK)
-	{
-	  // Make sure state is coherent
-	  g_UserGenerator.GetPoseDetectionCap().StopPoseDetection(aUserIDs[i]);
-	  g_UserGenerator.GetSkeletonCap().StartTracking(aUserIDs[i]);
-	}
-      break;
-    }
-}
 
 // this function is called each frame
 void glutDisplay (void)
@@ -209,8 +85,7 @@ void glutDisplay (void)
 
   glOrtho(0, depthMD.XRes(), depthMD.YRes(), 0, -1.0, 1.0);
 
-  if (!g_bPause)
-    {
+  if (!g_bPause){
       // Read next available data
       g_Context.WaitOneUpdateAll(g_UserGenerator);
     }

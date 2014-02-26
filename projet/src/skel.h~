@@ -1,0 +1,36 @@
+#ifndef SKELETON_H
+#define SKELETON_H
+
+class Skeleton;
+
+class Joint{
+  friend Skeleton;
+ public:
+  CAJoint(){}
+  Joint(const math::Mat4f&, int );
+  Joint(const math::Quaternion&, const math::Vec3f&);
+  ~Joint(){}
+ private: 
+  int fatherId;
+  math::Mat4f local2world;
+  
+};
+
+
+class Skeleton{
+ public:
+  //! Créer un squelette ayant la même structure que définit dans le BVH
+  Skeleton( );
+  Skeleton(const Skeleton&) const;
+
+  float distance(const Skeleton& ) const;
+
+  //  void draw() const;
+
+ private:
+  std::vector<Joint> joints;
+};
+
+
+
+#endif
