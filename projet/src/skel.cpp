@@ -101,4 +101,3 @@ float Skeleton::distance(const Skeleton& s) const{
  }
  return result;
 }
-

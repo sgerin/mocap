@@ -38,7 +38,7 @@
 #define XN_CALIBRATION_FILE_NAME "UserCalibration.bin"
 #define SAMPLE_XML_PATH "../data/SamplesConfig.xml"
 
-
+#define SEUIL_DISTANCE 100
 void CleanupExit();
 
 // Callback: New user was detected

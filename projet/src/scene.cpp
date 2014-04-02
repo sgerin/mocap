@@ -22,7 +22,7 @@
 // Includes
 //---------------------------------------------------------------------------
 #include "scene.h"
-
+//#include "export.h"
 
 extern xn::Context g_Context;
 extern xn::UserGenerator g_UserGenerator;
@@ -78,7 +78,9 @@ void XN_CALLBACK_TYPE User_NewUser(xn::UserGenerator& /*generator*/, XnUserID nI
 }
 // Callback: An existing user was lost
 void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& /*generator*/, XnUserID nId, void* /*pCookie*/){
+
   //TODO : soit suppression de l'utilisateur de la map, soit archivage. Les poses du squelette archivées ne doivent pas être supprimées car on peut les réutiliser.
+  m_skeleton.erase(nId);
 
   XnUInt32 epochTime = 0;
   xnOSGetEpochTime(&epochTime);
@@ -88,9 +90,15 @@ void XN_CALLBACK_TYPE User_LostUser(xn::UserGenerator& /*generator*/, XnUserID n
 void XN_CALLBACK_TYPE UserPose_PoseDetected(xn::PoseDetectionCapability& /*capability*/, const XnChar* strPose, XnUserID nId, void* /*pCookie*/){
   //TODO : archivage du squelette, puis mise à jours du squelette.
   // Si la distance est trop éloignée, reprendre le squelette précédent (peut être faire une transition entre les deux ?)
+  Skeleton new_s(nId);
+  float distance = m_skeleton.find(nId)->second.distance(new_s);
+  if(distance < SEUIL_DISTANCE)
+    m_skeleton.find(nId)->second = new_s;
+  //  else 
   // possibilité de détecter la pose courante et voir si elle n'a pas déjà été enregistrée (à un delta près), probablement il faut revoir la fonction distance du squelette
   // si on perd le personnage mais qu'on en trouve un nouveau dans une pose connue, on peu essayer de faire une transition.
 
+  //TODO export du squelette
   XnUInt32 epochTime = 0;
   xnOSGetEpochTime(&epochTime);
   printf("%d Pose %s detected for user %d\n", epochTime, strPose, nId);

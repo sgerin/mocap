@@ -6,12 +6,6 @@ SET( CMAKE_BUILD_TYPE Debug)			# used only by make
 #SET( CMAKE_BUILD_TYPE RelWithDebInfo)
 #SET( CMAKE_BUILD_TYPE Release)
 
-#si vous avez besoin de spéficiez le chemin vers GLUT
-SET(GLUT_HOME 		"D:\\alex\\lib\\freeglut-2.8.1-mingw")
-###################################################
-
-
-
 
 cmake_minimum_required(VERSION 2.4)
 if(COMMAND cmake_policy)
@@ -57,6 +51,7 @@ SET( CHARA_FILES
   ./src/math/Vec3.h
   ./src/math/Vec2.h
   ./src/math/Quaternion.h 
+  ./src/export.h
   ./src/main.cpp
 )
 

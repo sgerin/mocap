@@ -40,7 +40,7 @@ class Skeleton{
 
 
   float distance(const Skeleton& ) const;
-
+  void aaa(){}
  private:
   void addJoint(const XnSkeletonJoint&,const XnSkeletonJoint&);
   void initMatrix();
